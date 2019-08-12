@@ -7,3 +7,4 @@ planning_resources.py
 **/__pycache__
 **/plan_**
 **.ipynb**
+.vscode/
