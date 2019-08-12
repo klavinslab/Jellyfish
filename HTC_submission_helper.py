@@ -4,9 +4,11 @@ import json
 import pydent
 from pydent import AqSession
 from pydent import planner
-from resources import resources 
+from resources import resources
 
 # Log into database
+
+
 def session(server):
     db = AqSession(
         resources['aquarium']['login'],
@@ -15,15 +17,19 @@ def session(server):
     )
     return db
 
+
 def submit_define_culture_condition(canvas, strain_sample, strain_item, strain_ObjectType,
-                                    media_sample, media_ObjectType, replicates, inducer_param, 
+                                    media_sample, media_ObjectType, replicates, inducer_param,
                                     antibio_param, control_param, options_param):
     op = canvas.create_operation_by_name("Define Culture Conditions")
     # Output
-    canvas.set_field_value(op.output("Culture Condition"), sample=strain_sample, container=strain_ObjectType, item=strain_item)
+    canvas.set_field_value(op.output("Culture Condition"),
+                           sample=strain_sample, container=strain_ObjectType, item=strain_item)
     # Inputs
-    canvas.set_field_value(op.input('Strain'), sample=strain_sample, container=strain_ObjectType, item=strain_item)
-    canvas.set_field_value(op.input('Media'),  sample=media_sample,  container=media_ObjectType)
+    canvas.set_field_value(op.input(
+        'Strain'), sample=strain_sample, container=strain_ObjectType, item=strain_item)
+    canvas.set_field_value(
+        op.input('Media'),  sample=media_sample,  container=media_ObjectType)
     # JSON Parsable Paramters
     canvas.set_field_value(op.input('Replicates'),    value=int(replicates))
     canvas.set_field_value(op.input('Inducer(s)'),    value=inducer_param)
@@ -32,12 +38,14 @@ def submit_define_culture_condition(canvas, strain_sample, strain_item, strain_O
     canvas.set_field_value(op.input('Option(s)'),     value=options_param)
     return op
 
+
 def get_strain_sample(db, row):
     if row.Strain_name is not 'None':
         return db.Sample.find_by_name(row.Strain_name)
     else:
         return db.Sample.find(row.Strain_id)
-    
+
+
 def get_strain_item(db, strain_sample, row):
     if row.Strain_item_id is not 'None':
         return db.Item.find(int(row.Strain_item_id))
@@ -46,20 +54,39 @@ def get_strain_item(db, strain_sample, row):
             if item.location != 'deleted':
                 if item.object_type.name == row.Strain_containerType:
                     return item
-    
+
+
+def create_param_hash(*, name, concentration):
+    return {
+        str(name): {
+            "final_concentration": concentration
+        }
+    }
+
+
 def get_inducer_parameter(db, row):
     # ie: { inducer_A_name: { final_concentration: ["XXX_nM"] } }
     inducers_dict = {}
     if row.Inducer_A_name is not 'None':
-        inducer_a = { str(row.Inducer_A_name): {"final_concentration": format_final_concentration(row.A_FinalConcentrations)} }
+        inducer_a = create_param_hash(
+            name=row.Inducer_A_name,
+            concentration=format_final_concentration(row.A_FinalConcentrations)
+        )
         inducers_dict.update(inducer_a)
     if row.Inducer_B_name is not 'None':
-        inducer_b = { str(row.Inducer_B_name): {"final_concentration": format_final_concentration(row.B_FinalConcentrations)} }
+        inducer_b = create_param_hash(
+            name=row.Inducer_B_name,
+            concentration=format_final_concentration(row.B_FinalConcentrations)
+        )
         inducers_dict.update(inducer_b)
     if row.Inducer_C_name is not 'None':
-        inducer_c = { str(row.Inducer_C_name): {"final_concentration": format_final_concentration(row.C_FinalConcentrations)} }
+        inducer_c = create_param_hash(
+            name=row.Inducer_C_name,
+            concentration=format_final_concentration(row.C_FinalConcentrations)
+        )
         inducers_dict.update(inducer_c)
     return json.dumps(inducers_dict)
+
 
 def format_final_concentration(final_concentration_token):
     fconc_arr = final_concentration_token.split(',')
@@ -77,20 +104,27 @@ def format_final_concentration(final_concentration_token):
             fconc = qty + "_" + units
             formatted_arr.append(fconc)
     return formatted_arr
-                                 
+
+
 def format_parameter_string(string):
     string = string.replace('\"', '')
-    return string.replace(' ','').replace('{', '').replace('}', '').split(',')
+    return string.replace(' ', '').replace('{', '').replace('}', '').split(',')
+
 
 def get_antibio_parameter(db, row):
     antibiotics_dict = {}
     if row.Antibiotic_name is not 'None':
-        antibiotic = { str(row.Antibiotic_name): {"final_concentration": format_final_concentration(row.Antibiotic_FinalConcentration)[0]} }
+        antibiotic = create_param_hash(
+            name=row.Antibiotic_name,
+            concentration=format_final_concentration(
+                row.Antibiotic_FinalConcentration)[0]
+        )
         antibiotics_dict.update(antibiotic)
     else:
         return antibiotics_dict
     return json.dumps(antibiotics_dict)
-    
+
+
 def get_control_parameter(db, row):
     control_dict = {}
     if row.Control_Tag is not 'None':
@@ -102,6 +136,7 @@ def get_control_parameter(db, row):
         return control_dict
     return json.dumps(control_dict)
 
+
 def get_options_parameter(db, row):
     options_dict = {}
     if row.Options is not 'None':
@@ -111,42 +146,56 @@ def get_options_parameter(db, row):
         return {}
     return json.dumps(options_dict)
 
+
 def is_json(row, obj):
     try:
         json_obj = json.loads(obj)
     except:
-        raise Exception(f"\nCulture condition {obj} contains an object that is not JSON parable.\n")
+        raise Exception(
+            f"\nCulture condition {obj} contains an object that is not JSON parsable.\n")
     return True
+
 
 def submit_inoculate_culture_plate(canvas, culture_condition_list, incubation_temperature, culture_plate_container, options_param):
     op = canvas.create_operation_by_name("Inoculate Culture Plate")
     # Inputs
-    canvas.set_field_value(op.input("Temperature (°C)"), value=incubation_temperature)
+    canvas.set_field_value(op.input("Temperature (°C)"),
+                           value=incubation_temperature)
     canvas.set_field_value(op.input("Option(s)"), value=options_param)
-    input_val_array = [input_val for input_val in generate_input_array_values(culture_condition_list)]
-    for i in range(len(input_val_array)-1): # Add to the input array
+    input_val_array = [
+        input_val for input_val in generate_input_array_values(culture_condition_list)
+    ]
+    for i in range(len(input_val_array)-1):  # Add to the input array
         op.add_to_field_value_array(name="Culture Condition", role='input')
-    for idx, cc_op in enumerate(culture_condition_list): # Wire culuture conditions to input array
+    # Wire culture conditions to input array
+    for index, cc_op in enumerate(culture_condition_list):
         strain_item = cc_op.outputs[0].item
-        input_array = op.field_value_array(name='Culture Condition', role='input')
-        canvas.add_wire(cc_op.outputs[0], input_array[idx])
-        canvas.set_field_value(cc_op.output("Culture Condition"), item=strain_item)
-    op.set_field_value_array(name="Culture Condition", role='input', values=input_val_array) # Fill in the input field value array
+        input_array = op.field_value_array(
+            name='Culture Condition', role='input')
+        canvas.add_wire(cc_op.outputs[0], input_array[index])
+        canvas.set_field_value(cc_op.output(
+            "Culture Condition"), item=strain_item)
+    # Fill in the input field value array
+    op.set_field_value_array(name="Culture Condition",
+                             role='input', values=input_val_array)
     # Outputs
     for i in range(total_culturing_plates(culture_condition_list, culture_plate_container)-1):
-        op.add_to_field_value_array(name="Culture Plate", container=culture_plate_container, role='output')
+        op.add_to_field_value_array(
+            name="Culture Plate", container=culture_plate_container, role='output')
 
     return op
 
+
 def generate_input_array_values(culture_condition_list):
     for idx, cc_op in enumerate(culture_condition_list):
-            fvs_dict = {fv.name: fv for fv in cc_op.field_values}
-            value = {
-                'sample': fvs_dict['Culture Condition'].sample,
-                'item': fvs_dict['Culture Condition'].item,
-                'container': fvs_dict['Culture Condition'].object_type
-            }
-            yield value
+        fvs_dict = {fv.name: fv for fv in cc_op.field_values}
+        value = {
+            'sample': fvs_dict['Culture Condition'].sample,
+            'item': fvs_dict['Culture Condition'].item,
+            'container': fvs_dict['Culture Condition'].object_type
+        }
+        yield value
+
 
 def get_inducer_combinations(inducer_parameter):
     count_arr = []
@@ -154,7 +203,8 @@ def get_inducer_combinations(inducer_parameter):
         count_arr.append(int(len(fconc['final_concentration'])))
     return count_arr
 
-def get_total_experimental_wells(culture_condition_list):        
+
+def get_total_experimental_wells(culture_condition_list):
     total_experimental_wells = 0
     for op in culture_condition_list:
         fvs_dict = {fv.name: fv for fv in op.field_values}
@@ -164,6 +214,7 @@ def get_total_experimental_wells(culture_condition_list):
         total_experimental_wells += replicates
     return total_experimental_wells
 
+
 def total_culturing_plates(culture_condition_list, culture_plate_container):
     max_wells_per_plate = culture_plate_container.rows * culture_plate_container.columns
     total_wells = get_total_experimental_wells(culture_condition_list)
@@ -172,7 +223,3 @@ def total_culturing_plates(culture_condition_list, culture_plate_container):
         culturing_plates += 1
         total_wells -= max_wells_per_plate
     return culturing_plates
-
-
-
-
