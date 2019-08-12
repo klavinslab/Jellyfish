@@ -1,61 +1,78 @@
 # Aquarium_HTC
+
 Scripts for planning and accessing information about Aquarium High Throughput Culturing operation types through the Trident API.
 
 ## Aquarium High Throughput Culturing Planning
 
-1. Fill in the `HTC_Scripting_Template_v*.xlsx` with the strains and conditions desired for your experiment.
+You can specify the design for an high-throughput culturing plan by creating a spreadsheet that indicates the strains and conditions for your experiment.
+(A template is available in the file `HTC_Scripting_Template_v*.xlsx`.)
+The columns are as follows:
 
-- **Replicates**
-  - **_Int_** - The amount of replicates desired for a contiion
+- **CultureCondition** [integer] row index
 
-- **Media**
-  - **_String_** - The name of the media sample as found in the Aquarium database you are using.
+- **Replicates** [integer] The number of replicates desired for a condition.
 
-- **Control Tag**
-  - Will tag culture condition as a control and place this culture(s) into all the plates that are generated.
-  - **_JSON_** - The key represents the type of control and value represents positive or negative. Then, you can add your own additional information. 
-  **Make sure that the object entered into the template is JSON parable. Any word should be surrounded by quotes.**
+- **Media** [string] The name of the media sample in the Aquarium database you are using.
+
+- **Control Tag** [JSON] The culture condition as a control and place this culture(s) into all the plates that are generated.
+
+  The object should include a key representing the type of control with a value of `positive` or `negative`.
+  Additional, key-value pairs can be added.
 
   For a flow cytometry control, use the example below.
+
+  ```json
+  {
+    "fluorescence_control": "positive",
+    "channel": "tdTomato"
+  }
   ```
-    {
-      "flourescence_control": "positive",
-      "channel": "tdTomato"
-    }
-  ```
+
   Growth control example:
-  ```
-    {
-      "growth_control": "negative"
-    }
+
+  ```json
+  {
+    "growth_control": "negative"
+  }
   ```
 
-- **Strain**
-  - You can select a strain by filling in the Strain name or id.
-  - Strain_name **_(String)_** - The name of the strain sample as found in the Aquarium database you are using.
-  - Strain_id **_(Int)_** - The strain sample id number as found in the Aquarium database you are using.
+  **Be sure that the object entered into the template is JSON parsable. In particular, keys and string values surrounded by quotes.**
 
-- **Inducer(s)**
-  - The scripting template allows for upto 3 different types of inducers
-  - Each inducer has a name and a list of final concentrations that pertain to that inducer.
-  - Inducer_A_name **_(String)_** - The name of the inducer sample as found in the Aquarium database you are using.
-  - A_FinalConcentrations **_(list of strings)_** - a list of final concentrations.
-    - **ie:** 50_nM or 50nM 
+- **Strain** The name [string] or identifier [integer] for the strain in the Aquarium database.
+
+- **Inducer(s)**: The scripting template allows for up to 3 different types of inducers using labels `A`, `B` and `C`.
+  Each inducer has a name and a list of final concentrations.
+  The first inducer corresponds to the columns
+
+  - _Inducer_A_name_ **(String)** - The name of the inducer sample in the Aquarium database you are using.
+  - _A_FinalConcentrations_ **(list of strings)** - a list of final concentrations.
+    - **ie:** 50_nM or 50nM
     - **ie:** 0.15_nM, 50_nM, 100nM, 200nM
 
 - **Antibiotics**
-  - Antibiotic_name **_(String)_** - The name of the anitbiotic as found in the Aquarium database you are using.
-  - Antibiotic_FinalConcentration **_(String)_** - a list of final concentrations
-    - **ie:** 50_ug/mL
 
-- **Options**
-  - Is a special case for prototyping or uncommon conditions.
-  - **_JSON_** - **Make sure that the object entered into the template is JSON parable. Any word should be surrounded by quotes.**
+  - _Antibiotic_name_ **(String)** - The name of the antibiotic in the Aquarium database you are using.
+  - _Antibiotic_FinalConcentration_ **(String)** - a list of final concentrations
+
+    **ie:** 50_ug/mL
+
+- **Options** A JSON object with optional values.
+  Used for prototyping or uncommon conditions.
+  For example:
+
+  ```json
+  {
+    "reagents": {
+      "Ethanol": { "qty": 70, "units": "percent" }
+    },
+    "temperature": { "qty": 37, "units": "C" },
+    "duration": { "qty": 15, "units": "minute" }
+  }
+  ```
 
 ## Setup
 
-1. Copy `default_resources.py` to `resources.py` and fill in the values for
-   `username` and `password` details.
+Copy `default_resources.py` to `resources.py` and fill in the values for `username` and `password`.
 
 ## Running
 
@@ -85,6 +102,4 @@ python3 HTC_template_planning.py -s Production -f HTC_Scripting_Template_v3.xlsx
 
 ```
 
-will plan the experiment described in the HTC_Scripting_Template_v3.xlsx on the the Aquarium Production server. 
-
-
+will plan the experiment described in the HTC_Scripting_Template_v3.xlsx on the the Aquarium Production server.
