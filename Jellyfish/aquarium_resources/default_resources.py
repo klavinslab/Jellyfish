@@ -1,11 +1,9 @@
 resources = {
     "aquarium": {
         "aquarium_url": {
-            "Production": "http://52.27.43.242/",
-            "Nursery": "http://52.27.43.242:81/",
-            "Local": "http://localhost/"
+            "Production": "https://aq-pnnl.sd2e.org/",
         },
-        "login": "Username",
-        "password": "password"
+        "login": "sgopal",
+        "password": "TemporaryPassword"
     }
 }
