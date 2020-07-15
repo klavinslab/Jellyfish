@@ -8,7 +8,7 @@ import pydent
 from pydent import AqSession
 from pydent import planner
 
-from aquarium_resources.resources import resources
+from aquarium_resources.default_resources import resources
 
 # Log into database
 

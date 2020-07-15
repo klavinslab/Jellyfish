@@ -1,0 +1,10 @@
+# Reactor mandatory settings
+REACTOR_NAME=jellyfish-reactor
+# REACTOR_DESCRIPTION=
+REACTOR_ALIAS=jellyfish-reactor
+
+# Docker settings
+DOCKER_HUB_ORG=reshg
+DOCKER_IMAGE_TAG=jellyfish-reactor
+DOCKER_IMAGE_VERSION=latest
+DOCKER_USE_COMMIT_HASH=1

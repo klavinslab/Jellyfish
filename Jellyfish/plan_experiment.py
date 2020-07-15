@@ -6,29 +6,20 @@ from planning.planning_helper import (
     submit_inoculate_culture_plate, get_antibio_parameter,
     get_control_parameter, get_options_parameter, load_template_file
 )
+from agavepy.actors import get_context, get_client, send_bytes_result
 
 plate_types = {'eppendorf': "Eppendorf 96 Deepwell Plate"}
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-s", "--server", default='Production',
-                    help="The server that this plan will be planned in. Either Production, Nursery, or Local.")
-    ap.add_argument("-f", "--file", required=True,
-                    help="The name of the template that will be scripted.")
-    ap.add_argument("-n", "--name", type=str,
-                    default='Untitled Experiment', help="The name of your plan.")
-    ap.add_argument("-t", "--temp", type=int, default=30,
-                    help="The temperature that the culturing plate will be grown to saturation. Default will be 30C.")
-    ap.add_argument("-p", "--plate", type=str, default='eppendorf')
-    args = vars(ap.parse_args())
+def main(server, file, name, temp, plate):
+    print("Running plan_experiment.py code")
 
-# Use canvas to organize plan
-    db = session(args['server'])
+    # Use canvas to organize plan
+    db = session(server)
     canvas = planner.Planner(db)
     media_ObjectType = db.ObjectType.find_by_name('800 mL Liquid')
     culture_condition_list = []
-    experimental_design_df = load_template_file(args['file'])
+    experimental_design_df = load_template_file(file)
     for index, row in experimental_design_df.iterrows():
         strain_sample = get_strain_sample(db, row)
         strain_item = get_strain_item(db, strain_sample, row)
@@ -51,9 +42,9 @@ def main():
         )
         culture_condition_list.append(ccond_op)
 
-    incubation_temperature = args['temp']
+    incubation_temperature = temp
 
-    plate_string = plate_types[args["plate"]]
+    plate_string = plate_types[plate]
     culture_plate_container = db.ObjectType.find_by_name(plate_string)
     options_param = {}
     submit_inoculate_culture_plate(
@@ -72,16 +63,32 @@ def main():
 
     # Saving Plan to server
     canvas.session.set_timeout(150)
-    canvas.name = (args['name'])
+    canvas.name = (name)
     canvas.layout.topo_sort()
     canvas.layout.draw()
     canvas.create()
     canvas.save()
     print()
     print("Your new plan {} can be found at: {}".format(
-        args['name'], canvas.url))
+        name, canvas.url))
     print()
 
 
 if __name__ == '__main__':
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-s", "--server", default='Production',
+                    help="The server that this plan will be planned in. Either Production, Nursery, or Local.")
+    ap.add_argument("-f", "--file", required=True,
+                    help="The name of the template that will be scripted.")
+    ap.add_argument("-n", "--name", type=str,
+                    default='Untitled Experiment', help="The name of your plan.")
+    ap.add_argument("-t", "--temp", type=int, default=30,
+                    help="The temperature that the culturing plate will be grown to saturation. Default will be 30C.")
+    ap.add_argument("-p", "--plate", type=str, default='eppendorf')
+    args = ap.parse_args()
+    args_server = args.server
+    args_file = args.file
+    args_name = args.name
+    args_temp = args.temp
+    args_plate = args.plate
+    main(args_server, args_file, args_name, args_temp, args_plate)
